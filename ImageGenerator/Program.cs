@@ -7,7 +7,6 @@ using SkiaSharp;
 var bitmap = new SKBitmap(width: 794, height: 1134);
 var paint = new SKPaint(new SKFont(SKTypeface.Default)) { TextSize = 16 };
 var canvas = new SKCanvas(bitmap);
-canvas.Clear(new SKColor(255, 255, 255));
 
 var lineBuilder = new StringBuilder();
 var pageBuilder = new StringBuilder();
@@ -15,6 +14,7 @@ const int NumberOfImages = 2000;
 Directory.CreateDirectory("./data/");
 for (int i = 0; i < NumberOfImages; i++)
 {
+    canvas.Clear(new SKColor(255, 255, 255));
     for (int line = 50; line < 1130; line += 30)
     {
         lineBuilder.Clear();
