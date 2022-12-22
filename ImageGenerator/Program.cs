@@ -1,41 +1,50 @@
-﻿using System.Text;
+﻿using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Text;
 using ImageGenerator;
-using SkiaSharp;
 
 // Output image is 96dpi, and Skia doesn't seem to support changing it.
 // Use this website to convert cm dimensions to pixels under a given resolution (in dpi) https://www.pixelto.net/cm-to-px-converter
-var bitmap = new SKBitmap(width: 794, height: 1134);
-var paint = new SKPaint(new SKFont(SKTypeface.Default)) { TextSize = 16 };
-var canvas = new SKCanvas(bitmap);
+
+const float Resolution = 300;
+const int WidthFor96Dpi = 794;
+const int HeightFor96Dpi = 1134;
+var bitmap = new Bitmap(width: (int)(WidthFor96Dpi * Resolution / 96), height: (int)(HeightFor96Dpi * Resolution / 96));
+bitmap.SetResolution(Resolution, Resolution);
+var g = Graphics.FromImage(bitmap);
+g.CompositingQuality = CompositingQuality.HighQuality;
+var font = new Font("Times New Roman", 16);
 
 var lineBuilder = new StringBuilder();
 var pageBuilder = new StringBuilder();
-const int NumberOfImages = 2000;
+const int NumberOfImages = 10;
 Directory.CreateDirectory("./data/");
+int lineHeight;
 for (int i = 0; i < NumberOfImages; i++)
 {
-    canvas.Clear(new SKColor(255, 255, 255));
-    for (int line = 50; line < 1130; line += 30)
+    g.FillRectangle(Brushes.White, new(0, 0, bitmap.Width, bitmap.Height));
+    for (int line = 50; line < bitmap.Height; line += lineHeight + 5)
     {
         lineBuilder.Clear();
+        // Don't generate a space at the beginning of a new line.
+        ArabicCharacterGenerator.PreviousWasSpace = true;
         while (true)
         {
             lineBuilder.Append(ArabicCharacterGenerator.Generate());
             var text = lineBuilder.ToString();
-            if (paint.MeasureText(text) >= 700)
+            var textSize = g.MeasureString(text, font);
+            lineHeight = (int)textSize.Height;
+            if (textSize.Width >= bitmap.Width)
             {
-                canvas.DrawArabicText(text, line, paint, bitmap);
+                g.DrawString(text, font, Brushes.Black, 0, line);
                 pageBuilder.AppendLine(text);
                 break;
             }
         }
     }
 
-    using (var stream = File.OpenWrite($"./data/{i}.jpg"))
-    {
-        bitmap.Encode(SKEncodedImageFormat.Jpeg, quality: 100).SaveTo(stream);
-        File.WriteAllText($"./data/{i}.txt", pageBuilder.ToString());
-        pageBuilder.Clear();
-    }
+    bitmap.Save($"./data/{i}.png");
+    File.WriteAllText($"./data/{i}.txt", pageBuilder.ToString());
+    pageBuilder.Clear();
 }
 
